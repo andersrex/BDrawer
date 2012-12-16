@@ -13,27 +13,26 @@
       this.speed = options.speed || 300;
       this.overlap = options.overlap || 60;
       this.options = options || {};
-      this.closed = 1;
+      this.closed = true;
       this.width = this.content.parentNode.getBoundingClientRect().width;
       style = this.content.style;
       style.display = 'block';
       style.position = 'fixed';
       style.left = '0px';
       style.top = '0px';
-      style.zIndex = '1';
-      style.width = this.width;
+      style.zIndex = '1000';
+      style.width = this.width + 'px';
       style = this.drawer.style;
       style.display = 'block';
       style.position = 'fixed';
       style.left = '0px';
       style.top = '0px';
-      style.zIndex = '-1';
-      style.width = this.width;
+      style.zIndex = '900';
+      style.width = this.width + 'px';
       this.content.addEventListener('webkitTransitionEnd', this, false);
       this.content.addEventListener('touchstart', this, false);
       this.content.addEventListener('touchmove', this, false);
       this.content.addEventListener('touchend', this, false);
-      this.close(0);
     }
 
     BDrawer.prototype.move = function(dx, speed) {
@@ -45,19 +44,29 @@
 
     BDrawer.prototype.open = function() {
       this.move(this.width - this.overlap, this.speed);
-      return this.closed = 0;
+      return this.closed = false;
     };
 
     BDrawer.prototype.close = function() {
       this.move(0, this.speed);
-      return this.closed = 1;
+      return this.closed = true;
     };
 
     BDrawer.prototype.toggle = function() {
       if (this.closed) {
-        return this.open(this.speed);
+        return this.open();
       } else {
-        return this.close(this.speed);
+        return this.close();
+      }
+    };
+
+    BDrawer.prototype.handleEvent = function(e) {
+      if (e.type === 'touchstart') {
+        return this.touchStart(e);
+      } else if (e.type === 'touchmove') {
+        return this.touchMove(e);
+      } else if (e.type === 'touchend') {
+        return this.touchEnd(e);
       }
     };
 
@@ -73,7 +82,6 @@
         e.preventDefault();
       }
       this.dx = e.touches[0].pageX - this.x;
-      console.log(this.dx);
       if (this.closed) {
         if (this.dx < 0) {
           this.dx = 0;
@@ -89,24 +97,14 @@
     };
 
     BDrawer.prototype.touchEnd = function(e) {
-      if ((Number(new Date()) - this.start < 250 || Math.abs(this.dx) > (this.width - this.overlap) / 2) && this.dx > 0) {
+      if ((Number(new Date()) - this.start < 200 || Math.abs(this.dx) > (this.width - this.overlap) / 2) && this.dx > 0) {
         this.move(this.width - this.overlap, 200);
-        this.closed = 0;
+        this.closed = false;
       } else {
         this.move(0, 200);
-        this.closed = 1;
+        this.closed = true;
       }
       return e.stopPropagation();
-    };
-
-    BDrawer.prototype.handleEvent = function(e) {
-      if (e.type === 'touchstart') {
-        return this.touchStart(e);
-      } else if (e.type === 'touchmove') {
-        return this.touchMove(e);
-      } else if (e.type === 'touchend') {
-        return this.touchEnd(e);
-      }
     };
 
     return BDrawer;
