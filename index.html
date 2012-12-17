@@ -14,7 +14,6 @@
             height: 100%;
             font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
             font-weight: 300;
-
         }
         h1, p {
             margin: 10px 0 0 10px;
@@ -31,8 +30,6 @@
         #drawer a {
             color: white;
         }
-
-
         .hamburger {
             position:absolute;
             left:15px;
@@ -46,9 +43,6 @@
             color: black;
             content:'';
         }
-
-
-
     </style>
 </head>
 <body>
@@ -58,17 +52,17 @@
             <a href="https://github.com/andersrex/BDrawer" target="_blank">Go to Github</a>
         </p>
         <p>
-            <a href="#" onclick='bdrawer.close();return false;'>Close</a>
+            <a href="#" onclick='bdrawer.close();'>Close</a>
         </p>
     </div>
 
-    <div id="ext-viewport">
-        <a class="hamburger" href="#" onclick='bdrawer.toggle();return false;'></a>
+    <div id="content">
+        <a class="hamburger" href="#" onclick='bdrawer.toggle();'></a>
     </div>
 </body>
 <script>
 var drawer = document.getElementById('drawer');
-var content = document.getElementById('ext-viewport');
+var content = document.getElementById('content');
 
 var bdrawer = new BDrawer({
     drawer: drawer,

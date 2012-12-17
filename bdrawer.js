@@ -25,26 +25,27 @@
       style.position = 'fixed';
       style.left = '0px';
       style.top = '0px';
-      style.zIndex = '1000';
+      style.zIndex = 1000;
       style.width = this.width + 'px';
       style = this.drawer.style;
       style.display = 'block';
       style.position = 'fixed';
       style.left = '0px';
       style.top = '0px';
-      style.zIndex = '900';
+      style.zIndex = 900;
       style.width = this.width + 'px';
       this.mask = document.createElement('div');
-      this.mask.style.position = 'absolute';
-      this.mask.style.display = 'block';
-      this.mask.style.width = '100%';
-      this.mask.style.height = '100%';
-      this.mask.style.left = 0;
-      this.mask.style.top = '50px';
-      this.mask.style.zIndex = 1000;
-      this.mask.style.visibility = 'hidden';
-      this.mask.style.opacity = 0;
-      this.mask.style.background = 'black';
+      style = this.mask.style;
+      style.position = 'absolute';
+      style.display = 'block';
+      style.width = '100%';
+      style.height = '100%';
+      style.left = 0;
+      style.top = '50px';
+      style.zIndex = 1000;
+      style.visibility = 'hidden';
+      style.opacity = 0;
+      style.background = 'black';
       this.content.appendChild(this.mask);
       this.content.addEventListener('webkitTransitionEnd', this, false);
       this.content.addEventListener('touchstart', this, false);
@@ -135,6 +136,30 @@
       }
     };
 
+    BDrawer.prototype._touchEnd = function(e) {
+      var validSwipe;
+      if (this._touchPrevented()) {
+        return;
+      }
+      if (this._dx === 0) {
+        return;
+      }
+      validSwipe = Number(new Date()) - this.start < 200 || Math.abs(this._dx) > (this.width - this.overlap) / 2;
+      if (validSwipe) {
+        if (this._dx > 0) {
+          return this.open();
+        } else {
+          return this.close();
+        }
+      } else {
+        if (this._dx > 0) {
+          return this.close();
+        } else {
+          return this.open();
+        }
+      }
+    };
+
     BDrawer.prototype._touchPrevented = function() {
       var y1, y2;
       y1 = this.prevented.y1;
@@ -143,20 +168,6 @@
         return false;
       } else {
         return true;
-      }
-    };
-
-    BDrawer.prototype._touchEnd = function(e) {
-      if (this._touchPrevented()) {
-        return;
-      }
-      if (this._dx === 0) {
-        return;
-      }
-      if ((Number(new Date()) - this.start < 200 || Math.abs(this._dx) > (this.width - this.overlap) / 2) && this._dx > 0) {
-        return this.open();
-      } else {
-        return this.close();
       }
     };
 

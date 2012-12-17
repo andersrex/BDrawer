@@ -21,7 +21,7 @@ class window.BDrawer
     style.position = 'fixed'
     style.left = '0px'
     style.top = '0px'
-    style.zIndex = '1000'
+    style.zIndex = 1000
     style.width = @width + 'px'
 
     # Set up CSS for drawer element
@@ -30,21 +30,22 @@ class window.BDrawer
     style.position = 'fixed'
     style.left = '0px'
     style.top = '0px'
-    style.zIndex = '900'
+    style.zIndex = 900
     style.width = @width + 'px'
 
     # Set up mask element
     @mask = document.createElement 'div'
-    @mask.style.position = 'absolute'
-    @mask.style.display = 'block'
-    @mask.style.width = '100%'
-    @mask.style.height = '100%'
-    @mask.style.left = 0
-    @mask.style.top = '50px'
-    @mask.style.zIndex = 1000
-    @mask.style.visibility = 'hidden'
-    @mask.style.opacity = 0
-    @mask.style.background = 'black'
+    style = @mask.style
+    style.position = 'absolute'
+    style.display = 'block'
+    style.width = '100%'
+    style.height = '100%'
+    style.left = 0
+    style.top = '50px'
+    style.zIndex = 1000
+    style.visibility = 'hidden'
+    style.opacity = 0
+    style.background = 'black'
     @content.appendChild @mask
 
     # Bind events for content element
@@ -114,15 +115,6 @@ class window.BDrawer
       @_dx = -@width+@overlap if @_dx+@width-@overlap < 0
       @_move @_dx+@width-@overlap, 0
 
-  _touchPrevented: ->
-    y1 = @prevented.y1
-    y2 = @prevented.y2
-
-    if y1 is false or @_y < y1 or y2 is false or @_y > y2
-      return false
-    else
-      return true
-
   _touchEnd: (e) ->
     if @_touchPrevented()
       return
@@ -133,10 +125,25 @@ class window.BDrawer
 
     # Check if swipe is enough to close or open drawer
     # @TODO: Check for short and fast swipe
-    if (Number(new Date()) - @start < 200 or
-        Math.abs(@_dx) > (@width-@overlap)/2) and
-        @_dx > 0
-      @open()
-    else
-      @close()
+    validSwipe = (Number(new Date()) - @start < 200 or
+                Math.abs(@_dx) > (@width-@overlap)/2)
 
+    if validSwipe
+      if @_dx > 0
+        @open()
+      else
+        @close()
+    else
+      if @_dx > 0
+        @close()
+      else
+        @open()
+
+  _touchPrevented: ->
+    y1 = @prevented.y1
+    y2 = @prevented.y2
+
+    if y1 is false or @_y < y1 or y2 is false or @_y > y2
+      return false
+    else
+      return true
