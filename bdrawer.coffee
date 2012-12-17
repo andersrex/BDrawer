@@ -10,7 +10,7 @@ class window.BDrawer
     # Get options
     @content = options.content
     @drawer = options.drawer
-    @speed = options.speed or 300
+    @speed = options.speed or 200
     @overlap = options.overlap or 60
     @openable = options.openable or true
     @prevented = options.prevented or {y1: false, y2: false}

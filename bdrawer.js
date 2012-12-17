@@ -10,7 +10,7 @@
       }
       this.content = options.content;
       this.drawer = options.drawer;
-      this.speed = options.speed || 300;
+      this.speed = options.speed || 200;
       this.overlap = options.overlap || 60;
       this.openable = options.openable || true;
       this.prevented = options.prevented || {
