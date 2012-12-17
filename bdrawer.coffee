@@ -1,3 +1,7 @@
+# BDrawer 0.1
+# MIT Licensed
+# By Anders Rex (andersrex.com)
+
 class window.BDrawer
 
   constructor: (options) ->
@@ -49,7 +53,6 @@ class window.BDrawer
     @content.appendChild @mask
 
     # Bind events for content element
-    @content.addEventListener 'webkitTransitionEnd', @, false
     @content.addEventListener 'touchstart', this, false
     @content.addEventListener 'touchmove', this, false
     @content.addEventListener 'touchend', this, false

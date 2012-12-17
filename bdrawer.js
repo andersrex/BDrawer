@@ -47,7 +47,6 @@
       style.opacity = 0;
       style.background = 'black';
       this.content.appendChild(this.mask);
-      this.content.addEventListener('webkitTransitionEnd', this, false);
       this.content.addEventListener('touchstart', this, false);
       this.content.addEventListener('touchmove', this, false);
       this.content.addEventListener('touchend', this, false);
