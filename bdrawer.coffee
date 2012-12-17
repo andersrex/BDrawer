@@ -8,11 +8,12 @@ class window.BDrawer
     @drawer = options.drawer
     @speed = options.speed or 300
     @overlap = options.overlap or 60
+    @openable = options.openable or true
+    @prevented = options.prevented or {y1: false, y2: false}
+    @closed = options.closed or true
     @options = options or {}
-    @closed = true
 
-    # Get parent element width
-    @width = @content.parentNode.getBoundingClientRect().width
+    @width = @content.getBoundingClientRect().width
 
     # Set up CSS for content element
     style = @content.style
@@ -32,24 +33,42 @@ class window.BDrawer
     style.zIndex = '900'
     style.width = @width + 'px'
 
-    # Bind events
-    @content.addEventListener('webkitTransitionEnd', @, false)
-    @content.addEventListener('touchstart', this, false)
-    @content.addEventListener('touchmove', this, false)
-    @content.addEventListener('touchend', this, false)
+    # Set up mask element
+    @mask = document.createElement 'div'
+    @mask.style.position = 'absolute'
+    @mask.style.display = 'block'
+    @mask.style.width = '100%'
+    @mask.style.height = '100%'
+    @mask.style.left = 0
+    @mask.style.top = '50px'
+    @mask.style.zIndex = 1000
+    @mask.style.visibility = 'hidden'
+    @mask.style.opacity = 0
+    @mask.style.background = 'black'
+    @content.appendChild @mask
 
-  # Move the content element delta x (dx) with speed (speed)
-  move: (dx, speed) ->
-    style = @content.style
-    style.webkitTransitionDuration = speed + 'ms'
-    style.webkitTransform = 'translate3d(' + dx + 'px, 0, 0)'
+    # Bind events for content element
+    @content.addEventListener 'webkitTransitionEnd', @, false
+    @content.addEventListener 'touchstart', this, false
+    @content.addEventListener 'touchmove', this, false
+    @content.addEventListener 'touchend', this, false
+    @mask.addEventListener 'click', this, false
+
+  handleEvent: (e) ->
+    switch e.type
+      when "touchstart" then @_touchStart e
+      when "touchmove" then @_touchMove e
+      when "touchend" then @_touchEnd e
+      when "click" then @close()
 
   open: () ->
-    @move @width - @overlap, @speed
+    @_move @width - @overlap, @speed
+    @_showMask()
     @closed = false
 
   close: () ->
-    @move 0, @speed
+    @_move 0, @speed
+    @_hideMask()
     @closed = true
 
   toggle: () ->
@@ -58,47 +77,66 @@ class window.BDrawer
     else
       @close()
 
-  handleEvent: (e) ->
-    # Event handler
+  _showMask: ->
+    @mask.style.visibility = 'visible'
 
-    if e.type is 'touchstart'
-      @touchStart e
+  _hideMask: ->
+    @mask.style.visibility = 'hidden'
 
-    else if e.type is 'touchmove'
-      @touchMove e
+  # Move the content element delta x (dx) with speed (speed)
+  _move: (dx, speed) ->
+    if @openable
+      style = @content.style
+      style.webkitTransitionDuration = speed + 'ms'
+      style.webkitTransform = 'translate3d(' + dx + 'px, 0, 0)'
 
-    else if e.type is 'touchend'
-      @touchEnd e
+  _touchStart: (e) ->
+    @_x = e.touches[0].pageX
+    @_y = e.touches[0].pageY
+    @_start = Number( new Date() )
+    @_dx = 0
 
-  touchStart: (e) ->
-    @x = e.touches[0].pageX
-    @y = e.touches[0].pageY
-    @start = Number( new Date() )
+  _touchMove: (e) ->
 
-  touchMove: (e) ->
+    # Check for other gestures than swipe
     if e.touches.length > 1 or e.scale && e.scale isnt 1
       return
-      e.preventDefault()
 
     # Calculate delta x
-    @dx = e.touches[0].pageX - @x
-
+    @_dx = e.touches[0].pageX - @_x
     if @closed
-      @dx = 0 if @dx < 0
-      @move @dx, 0
+      if @openable
+        unless @_touchPrevented()
+          @_dx = 0 if @_dx < 0
+          @_move @_dx, 0
     else
-      @dx = 0 if @dx > 0
-      @move @dx+@width-@overlap, 0
+      @_dx = 0 if @_dx > 0
+      @_dx = -@width+@overlap if @_dx+@width-@overlap < 0
+      @_move @_dx+@width-@overlap, 0
 
-    e.stopPropagation()
+  _touchPrevented: ->
+    y1 = @prevented.y1
+    y2 = @prevented.y2
 
-  touchEnd: (e) ->
-    # or Math.abs(@dx) > 20
-    if (Number(new Date()) - @start < 200 or Math.abs(@dx) > (@width-@overlap)/2) and @dx > 0
-      @move @width-@overlap, 200
-      @closed = false
+    if y1 is false or @_y < y1 or y2 is false or @_y > y2
+      return false
     else
-      @move 0, 200
-      @closed = true
+      return true
 
-    e.stopPropagation()
+  _touchEnd: (e) ->
+    if @_touchPrevented()
+      return
+
+    # Tap if there is no delta x
+    if @_dx == 0
+      return
+
+    # Check if swipe is enough to close or open drawer
+    # @TODO: Check for short and fast swipe
+    if (Number(new Date()) - @start < 200 or
+        Math.abs(@_dx) > (@width-@overlap)/2) and
+        @_dx > 0
+      @open()
+    else
+      @close()
+

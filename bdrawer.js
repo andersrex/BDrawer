@@ -12,9 +12,14 @@
       this.drawer = options.drawer;
       this.speed = options.speed || 300;
       this.overlap = options.overlap || 60;
+      this.openable = options.openable || true;
+      this.prevented = options.prevented || {
+        y1: false,
+        y2: false
+      };
+      this.closed = options.closed || true;
       this.options = options || {};
-      this.closed = true;
-      this.width = this.content.parentNode.getBoundingClientRect().width;
+      this.width = this.content.getBoundingClientRect().width;
       style = this.content.style;
       style.display = 'block';
       style.position = 'fixed';
@@ -29,26 +34,47 @@
       style.top = '0px';
       style.zIndex = '900';
       style.width = this.width + 'px';
+      this.mask = document.createElement('div');
+      this.mask.style.position = 'absolute';
+      this.mask.style.display = 'block';
+      this.mask.style.width = '100%';
+      this.mask.style.height = '100%';
+      this.mask.style.left = 0;
+      this.mask.style.top = '50px';
+      this.mask.style.zIndex = 1000;
+      this.mask.style.visibility = 'hidden';
+      this.mask.style.opacity = 0;
+      this.mask.style.background = 'black';
+      this.content.appendChild(this.mask);
       this.content.addEventListener('webkitTransitionEnd', this, false);
       this.content.addEventListener('touchstart', this, false);
       this.content.addEventListener('touchmove', this, false);
       this.content.addEventListener('touchend', this, false);
+      this.mask.addEventListener('click', this, false);
     }
 
-    BDrawer.prototype.move = function(dx, speed) {
-      var style;
-      style = this.content.style;
-      style.webkitTransitionDuration = speed + 'ms';
-      return style.webkitTransform = 'translate3d(' + dx + 'px, 0, 0)';
+    BDrawer.prototype.handleEvent = function(e) {
+      switch (e.type) {
+        case "touchstart":
+          return this._touchStart(e);
+        case "touchmove":
+          return this._touchMove(e);
+        case "touchend":
+          return this._touchEnd(e);
+        case "click":
+          return this.close();
+      }
     };
 
     BDrawer.prototype.open = function() {
-      this.move(this.width - this.overlap, this.speed);
+      this._move(this.width - this.overlap, this.speed);
+      this._showMask();
       return this.closed = false;
     };
 
     BDrawer.prototype.close = function() {
-      this.move(0, this.speed);
+      this._move(0, this.speed);
+      this._hideMask();
       return this.closed = true;
     };
 
@@ -60,51 +86,78 @@
       }
     };
 
-    BDrawer.prototype.handleEvent = function(e) {
-      if (e.type === 'touchstart') {
-        return this.touchStart(e);
-      } else if (e.type === 'touchmove') {
-        return this.touchMove(e);
-      } else if (e.type === 'touchend') {
-        return this.touchEnd(e);
+    BDrawer.prototype._showMask = function() {
+      return this.mask.style.visibility = 'visible';
+    };
+
+    BDrawer.prototype._hideMask = function() {
+      return this.mask.style.visibility = 'hidden';
+    };
+
+    BDrawer.prototype._move = function(dx, speed) {
+      var style;
+      if (this.openable) {
+        style = this.content.style;
+        style.webkitTransitionDuration = speed + 'ms';
+        return style.webkitTransform = 'translate3d(' + dx + 'px, 0, 0)';
       }
     };
 
-    BDrawer.prototype.touchStart = function(e) {
-      this.x = e.touches[0].pageX;
-      this.y = e.touches[0].pageY;
-      return this.start = Number(new Date());
+    BDrawer.prototype._touchStart = function(e) {
+      this._x = e.touches[0].pageX;
+      this._y = e.touches[0].pageY;
+      this._start = Number(new Date());
+      return this._dx = 0;
     };
 
-    BDrawer.prototype.touchMove = function(e) {
+    BDrawer.prototype._touchMove = function(e) {
       if (e.touches.length > 1 || e.scale && e.scale !== 1) {
         return;
-        e.preventDefault();
       }
-      this.dx = e.touches[0].pageX - this.x;
+      this._dx = e.touches[0].pageX - this._x;
       if (this.closed) {
-        if (this.dx < 0) {
-          this.dx = 0;
+        if (this.openable) {
+          if (!this._touchPrevented()) {
+            if (this._dx < 0) {
+              this._dx = 0;
+            }
+            return this._move(this._dx, 0);
+          }
         }
-        this.move(this.dx, 0);
       } else {
-        if (this.dx > 0) {
-          this.dx = 0;
+        if (this._dx > 0) {
+          this._dx = 0;
         }
-        this.move(this.dx + this.width - this.overlap, 0);
+        if (this._dx + this.width - this.overlap < 0) {
+          this._dx = -this.width + this.overlap;
+        }
+        return this._move(this._dx + this.width - this.overlap, 0);
       }
-      return e.stopPropagation();
     };
 
-    BDrawer.prototype.touchEnd = function(e) {
-      if ((Number(new Date()) - this.start < 200 || Math.abs(this.dx) > (this.width - this.overlap) / 2) && this.dx > 0) {
-        this.move(this.width - this.overlap, 200);
-        this.closed = false;
+    BDrawer.prototype._touchPrevented = function() {
+      var y1, y2;
+      y1 = this.prevented.y1;
+      y2 = this.prevented.y2;
+      if (y1 === false || this._y < y1 || y2 === false || this._y > y2) {
+        return false;
       } else {
-        this.move(0, 200);
-        this.closed = true;
+        return true;
       }
-      return e.stopPropagation();
+    };
+
+    BDrawer.prototype._touchEnd = function(e) {
+      if (this._touchPrevented()) {
+        return;
+      }
+      if (this._dx === 0) {
+        return;
+      }
+      if ((Number(new Date()) - this.start < 200 || Math.abs(this._dx) > (this.width - this.overlap) / 2) && this._dx > 0) {
+        return this.open();
+      } else {
+        return this.close();
+      }
     };
 
     return BDrawer;
