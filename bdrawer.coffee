@@ -97,41 +97,50 @@ class window.BDrawer
   _touchStart: (e) ->
     @_x = e.touches[0].pageX
     @_y = e.touches[0].pageY
-    @_start = Number( new Date() )
+    @_t = Number( new Date() )
     @_dx = 0
 
+    # For checking for Y axis scrolling
+    @_scrolling = null
+
   _touchMove: (e) ->
+    # Check if touch is prevented
+    if @_touchPrevented() and @closed
+      return
 
     # Check for other gestures than swipe
-    if e.touches.length > 1 or e.scale && e.scale isnt 1
+    if e.touches.length > 1
       return
 
-    # Calculate delta x
+    # Delta X and delta Y
     @_dx = e.touches[0].pageX - @_x
-    if @closed
-      if @openable
-        unless @_touchPrevented()
-          @_dx = 0 if @_dx < 0
-          @_move @_dx, 0
-    else
-      @_dx = 0 if @_dx > 0
-      @_dx = -@width+@overlap if @_dx+@width-@overlap < 0
-      @_move @_dx+@width-@overlap, 0
+    dy = e.touches[0].pageY - @_y
+
+    # If first delta y is twice bigger that delta x we are scrolling
+    if @_scrolling is null
+      @_scrolling = Math.abs(dy) > Math.abs(@_dx)
+
+    unless @_scrolling
+      if @closed and @openable
+        @_dx = 0 if @_dx < 0
+        @_move @_dx, 0
+      else
+        @_dx = 0 if @_dx > 0
+        @_dx = -@width+@overlap if @_dx+@width-@overlap < 0
+        @_move @_dx+@width-@overlap, 0
 
   _touchEnd: (e) ->
-    if @_touchPrevented()
+    if @_touchPrevented() or @_scrolling or @_dx is 0
       return
 
-    # Tap if there is no delta x
-    if @_dx == 0
-      return
+    dt = Number(new Date()) - @_t
 
     # Check if swipe is enough to close or open drawer
-    # @TODO: Check for short and fast swipe
-    validSwipe = (Number(new Date()) - @start < 200 or
-                Math.abs(@_dx) > (@width-@overlap)/2)
+    validSwipe = (dt < 200 or
+      Math.abs(@_dx) > (@width-@overlap)/2) or
+      (Math.abs(@_dx) > 20 and dt < 150)
 
-    if validSwipe
+    if validSwipe and not @_scrolling
       if @_dx > 0
         @open()
       else

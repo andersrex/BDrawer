@@ -106,45 +106,50 @@
     BDrawer.prototype._touchStart = function(e) {
       this._x = e.touches[0].pageX;
       this._y = e.touches[0].pageY;
-      this._start = Number(new Date());
-      return this._dx = 0;
+      this._t = Number(new Date());
+      this._dx = 0;
+      return this._scrolling = null;
     };
 
     BDrawer.prototype._touchMove = function(e) {
-      if (e.touches.length > 1 || e.scale && e.scale !== 1) {
+      var dy;
+      if (this._touchPrevented() && this.closed) {
+        return;
+      }
+      if (e.touches.length > 1) {
         return;
       }
       this._dx = e.touches[0].pageX - this._x;
-      if (this.closed) {
-        if (this.openable) {
-          if (!this._touchPrevented()) {
-            if (this._dx < 0) {
-              this._dx = 0;
-            }
-            return this._move(this._dx, 0);
+      dy = e.touches[0].pageY - this._y;
+      if (this._scrolling === null) {
+        this._scrolling = Math.abs(dy) > Math.abs(this._dx);
+      }
+      if (!this._scrolling) {
+        if (this.closed && this.openable) {
+          if (this._dx < 0) {
+            this._dx = 0;
           }
+          return this._move(this._dx, 0);
+        } else {
+          if (this._dx > 0) {
+            this._dx = 0;
+          }
+          if (this._dx + this.width - this.overlap < 0) {
+            this._dx = -this.width + this.overlap;
+          }
+          return this._move(this._dx + this.width - this.overlap, 0);
         }
-      } else {
-        if (this._dx > 0) {
-          this._dx = 0;
-        }
-        if (this._dx + this.width - this.overlap < 0) {
-          this._dx = -this.width + this.overlap;
-        }
-        return this._move(this._dx + this.width - this.overlap, 0);
       }
     };
 
     BDrawer.prototype._touchEnd = function(e) {
-      var validSwipe;
-      if (this._touchPrevented()) {
+      var dt, validSwipe;
+      if (this._touchPrevented() || this._scrolling || this._dx === 0) {
         return;
       }
-      if (this._dx === 0) {
-        return;
-      }
-      validSwipe = Number(new Date()) - this.start < 200 || Math.abs(this._dx) > (this.width - this.overlap) / 2;
-      if (validSwipe) {
+      dt = Number(new Date()) - this._t;
+      validSwipe = (dt < 200 || Math.abs(this._dx) > (this.width - this.overlap) / 2) || (Math.abs(this._dx) > 20 && dt < 150);
+      if (validSwipe && !this._scrolling) {
         if (this._dx > 0) {
           return this.open();
         } else {
