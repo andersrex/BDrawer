@@ -1,6 +1,6 @@
 ## BDrawer
 
-A drawer with 1:1 touch written in CoffeeScript.
+A hardware accelerated CSS3 drawer with 1:1 touch, written in CoffeeScript.
 
 - Library agnostic
 - Hardware accelerated
