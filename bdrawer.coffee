@@ -45,7 +45,7 @@ class window.BDrawer
     style.width = '100%'
     style.height = '100%'
     style.left = 0
-    style.top = '50px'
+    style.top = 0
     style.zIndex = 1000
     style.visibility = 'hidden'
     style.opacity = 0
@@ -136,11 +136,11 @@ class window.BDrawer
     dt = Number(new Date()) - @_t
 
     # Check if swipe is enough to close or open drawer
-    validSwipe = (dt < 200 or
-      Math.abs(@_dx) > (@width-@overlap)/2) or
-      (Math.abs(@_dx) > 20 and dt < 150)
+    isSwipe = (dt < 200 or
+                  Math.abs(@_dx) > (@width-@overlap)/2) or
+                  (Math.abs(@_dx) > 20 and dt < 150)
 
-    if validSwipe and not @_scrolling
+    if isSwipe and not @_scrolling
       if @_dx > 0
         @open()
       else
@@ -159,3 +159,4 @@ class window.BDrawer
       return false
     else
       return true
+
